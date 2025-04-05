@@ -1,0 +1,28 @@
+# Visual Studio y compilación
+.vs/
+bin/
+obj/
+
+# Dependencias y paquetes
+packages/
+node_modules/
+
+# Archivos de configuración y secretos
+appsettings.json
+appsettings.Development.json
+secrets.json
+*.env
+
+# Archivos generados por Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Configuración de la carpeta de soluciones
+.vscode/
+.idea/
+
+# Archivos de depuración
+*.pdb
+*.lock.json

@@ -220,5 +220,32 @@ namespace ToDoListProject.Services
 
             return user;
         }
+
+        public async Task<bool> validateUserFromOauth(ClaimsPrincipal principals)
+        {
+            var email = principals?.FindFirst(ClaimTypes.Email)?.Value;
+            var name = principals?.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (email is null || name is null)
+                return false;
+
+            var username = email.Split("@")[0];
+
+            user = await _UserManager.FindByEmailAsync(email);
+
+            if (user is null)
+            {
+                user = new User
+                {
+                    Email = email,
+                    FullName = name,
+                    UserName = username,
+                };
+
+                await _UserManager.CreateAsync(user);
+            }
+
+            return true;
+        }
     }
 }

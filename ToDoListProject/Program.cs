@@ -71,6 +71,13 @@ builder.Services.AddAuthentication(options =>
         };
 
     })
+    .AddGoogle("Google", options =>
+    {
+        options.ClientId = builder.Configuration["client-id"];
+        options.ClientSecret = builder.Configuration["client-secret"];
+        options.CallbackPath = "/signin-google";
+
+    })
     .AddCookie(options =>
     {
         options.Cookie.Name = "accesToken";
@@ -78,6 +85,7 @@ builder.Services.AddAuthentication(options =>
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always; 
         options.Cookie.SameSite = SameSiteMode.None;
     });
+    
 
 builder.Services.AddAuthorization();
 

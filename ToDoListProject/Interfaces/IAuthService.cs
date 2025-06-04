@@ -14,5 +14,6 @@ namespace ToDoListProject.Interfaces
         Task<TokenDto> RefreshToken(TokenDto dto);
         void SetTokensInsideCookie(TokenDto TokenDto, HttpContext context);
         Task<User> getUserFromToken(string accesToken);
+        Task<bool> validateUserFromOauth(ClaimsPrincipal principals);
     }
 }

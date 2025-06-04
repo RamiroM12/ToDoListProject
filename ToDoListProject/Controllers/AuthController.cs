@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ToDoListProject.Dtos.UserDtos;
 using ToDoListProject.Interfaces;
 using ToDoListProject.Models;
@@ -28,6 +30,42 @@ namespace ToDoListProject.Controllers
             _signInManager = signInManager;
             _authService = authService;
             _logger = logger;
+        }
+
+        [HttpGet("login-oauth")]
+        public IActionResult LoginWithGoogle()
+        {
+            var props = new AuthenticationProperties
+            {
+                RedirectUri = "/api/Auth/callback"
+            };
+            return Challenge(props, "Google");
+        }
+
+        [HttpGet("callback")]
+        public async Task<IActionResult> LoginCallback()
+        {
+            var results = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+
+            if (!results.Succeeded)
+                return BadRequest("Error al autenticar con el proveedor externo");
+
+            var validation = await _authService.validateUserFromOauth(results.Principal);
+
+           if (validation == true)
+           {
+                var tokenDto = await _authService.GenerateToken(populateExp: true);
+
+                _authService.SetTokensInsideCookie(tokenDto, HttpContext);
+
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+                return Redirect("/swagger");
+           }
+
+            return BadRequest("Error al autenticar con el proveedor externo");
+
+
         }
 
         [HttpPost("register")]
@@ -71,24 +109,6 @@ namespace ToDoListProject.Controllers
             }
              return BadRequest(ModelState);
          }
-
-        [HttpPost("autoLogin")]
-        public async Task<IActionResult> AutoLogin()
-        {
-            var loginDto = new LoginUserDto() {Email = "god123@gmail.com", Password = "God123_" };
-            var result = await _authService.ValidateUser(loginDto);
-
-            if (result)
-            {
-                var tokenDto = await _authService.GenerateToken(populateExp: true);
-
-                _authService.SetTokensInsideCookie(tokenDto, HttpContext);
-
-                return Ok();
-            }
-
-            return Unauthorized("Email o Contraseña Incorrectos.");
-        }
 
 
         [HttpGet("getUsers")]

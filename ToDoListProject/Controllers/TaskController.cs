@@ -31,7 +31,12 @@ namespace ToDoListProject.Controllers
 
             HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
 
-            var user = await _authService.getUserFromToken(accesToken);
+            var tokenUser = await _authService.getUserFromToken(accesToken);
+
+            var user = await _userManager.FindByNameAsync(tokenUser.UserName);
+
+            if (user is null)
+                return BadRequest("Usuario no encontrado");
 
             var isCreated = await _taskService.PostTask(dto, user.Id.ToString() );
 

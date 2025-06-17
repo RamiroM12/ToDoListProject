@@ -23,6 +23,15 @@ namespace ToDoListProject.Controllers
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
 
+        [HttpGet("test-user-manager")]
+        public IActionResult TestUserManager()
+        {
+            if (_userManager == null)
+                return BadRequest("UserManager no está inyectado");
+
+            return Ok("UserManager funciona correctamente");
+        }
+
         public AuthController(IConfiguration configuration, UserManager<User> userManager, SignInManager<User> signInManager, IAuthService authService, ILogger<AuthController> logger)
         {
             _configuration = configuration;
@@ -37,22 +46,24 @@ namespace ToDoListProject.Controllers
         {
             var props = new AuthenticationProperties
             {
-                RedirectUri = "/api/Auth/callback"
+                RedirectUri = Url.Action(nameof(LoginCallback)) 
             };
-            return Challenge(props, "Google");
+            return Challenge(props, "Google"); 
         }
 
-        [HttpGet("callback")]
+        [HttpGet("signin-google")]
         public async Task<IActionResult> LoginCallback()
         {
-            var results = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+           var results = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
 
             if (!results.Succeeded)
                 return BadRequest("Error al autenticar con el proveedor externo");
 
             var validation = await _authService.validateUserFromOauth(results.Principal);
 
-           if (validation == true)
+            //var validation = await _authService.validateUserFromOauth(User);
+
+            if (validation == true)
            {
                 var tokenDto = await _authService.GenerateToken(populateExp: true);
 

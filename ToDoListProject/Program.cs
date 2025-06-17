@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +14,6 @@ using ToDoListProject.Models;
 using ToDoListProject.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionStrings = builder.Configuration.GetConnectionString("DefaultConnection");
 
 
 builder.Services.AddControllers()
@@ -32,12 +33,14 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 // Db Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
-    new MySqlServerVersion(new Version(8, 0, 39))
+    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
 ));
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
+
+
 
 // Authenticaction Configuration
 builder.Services.AddAuthentication(options =>
@@ -80,17 +83,18 @@ builder.Services.AddAuthentication(options =>
     })
     .AddCookie(options =>
     {
-        options.Cookie.Name = "accesToken";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; 
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.None;
     });
-    
+
 
 builder.Services.AddAuthorization();
 
-
+try 
+{
 var app = builder.Build();
+
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -107,4 +111,12 @@ app.UseHttpsRedirection();
 
 app.MapControllers();
 
-app.Run();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Excepción al correr la app:");
+    Console.WriteLine(ex);
+    throw;
+}

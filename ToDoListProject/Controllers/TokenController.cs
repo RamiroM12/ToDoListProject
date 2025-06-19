@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ToDoListProject.Dtos;
 using ToDoListProject.Interfaces;
+using ToDoListProject.Models;
 
 namespace ToDoListProject.Controllers
 {
@@ -9,10 +11,16 @@ namespace ToDoListProject.Controllers
     [ApiController]
     public class TokenController : Controller
     {
-        private readonly IAuthService _authService;
+        private readonly ITokenService _tokenService;
+        private readonly ICookieService _cookieService;
+        private readonly UserManager<User> _userManager;
 
-        public TokenController(IAuthService service) => _authService = service;
-
+        public TokenController(ITokenService tokenService, ICookieService cookieService, UserManager<User> userManager)
+        {
+            _tokenService = tokenService;
+            _cookieService = cookieService;
+            _userManager = userManager;
+        }
         [HttpPost("refresh")]     
         public async Task<IActionResult> Refresh()
         {
@@ -21,9 +29,11 @@ namespace ToDoListProject.Controllers
 
             var tokenDto = new TokenDto(accesToken, refreshToken);
 
-            var tokenToReturn = await _authService.RefreshToken(tokenDto);
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
 
-            _authService.SetTokensInsideCookie(tokenToReturn, HttpContext);
+            var tokenToReturn = await _tokenService.RefreshToken(user, tokenDto);
+
+            _cookieService.SetTokensInsideCookie(tokenToReturn, HttpContext);
 
             return Ok();
 

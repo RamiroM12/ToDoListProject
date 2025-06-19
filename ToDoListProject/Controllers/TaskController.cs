@@ -29,12 +29,12 @@ namespace ToDoListProject.Controllers
         {
             if (dto == null) return BadRequest("Los datos proporcionados son invalidos");
 
-            HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
+            //HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
 
-            var tokenUser = await _authService.getUserFromToken(accesToken);
+            //var tokenUser = await _authService.getUserFromToken(accesToken);
 
-            var user = await _userManager.FindByNameAsync(tokenUser.UserName);
-
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
+            
             if (user is null)
                 return BadRequest("Usuario no encontrado");
 
@@ -50,9 +50,11 @@ namespace ToDoListProject.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserTasks()
         {
-            HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
+            //HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
 
-            var user = await _authService.getUserFromToken(accesToken);
+            //var user = await _authService.getUserFromToken(accesToken);
+
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
 
             var userTasks = await _taskService.GetUserDtoTasks(user.Id);
 
@@ -66,9 +68,11 @@ namespace ToDoListProject.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteUserTaskById(int id)
         {
-            HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
+            //HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
 
-            var user = await _authService.getUserFromToken(accesToken);
+            //var user = await _authService.getUserFromToken(accesToken);
+
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
 
             var result = await _taskService.DeleteTask(user.Id, id);
 
@@ -84,9 +88,11 @@ namespace ToDoListProject.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateTask([FromBody] UpdateTaskDto dto)
         {
-            HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
+            //HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
 
-            var user = await _authService.getUserFromToken(accesToken);
+            //var user = await _authService.getUserFromToken(accesToken);
+
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
             var result = await _taskService.UpdateTask(dto, user.Id);
 
             if (!result) return BadRequest("No se encontro la tarea a actualizar.");
@@ -98,9 +104,10 @@ namespace ToDoListProject.Controllers
         [Authorize]
         public async Task<IActionResult> SortTasksByPriority()
         {
-            HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
+            //HttpContext.Request.Cookies.TryGetValue("accesToken", out var accesToken);
 
-            var user = await _authService.getUserFromToken(accesToken);
+            //var user = await _authService.getUserFromToken(accesToken);
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
             var sortedTasks = await _taskService.SortTasksByPriority(user.Id);
 
             if (sortedTasks == null)

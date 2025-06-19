@@ -29,6 +29,10 @@ builder.Configuration.AddUserSecrets<Program>();
 // DI Injections
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IOauthService, OauthService>();
+builder.Services.AddScoped<ICookieService, CookieService>();
+builder.Services.AddScoped<ILoginManagerService, LoginManagerService>();
 
 // Db Configuration
 builder.Services.AddDbContext<AppDbContext>(options =>

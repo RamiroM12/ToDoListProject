@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Security.Claims;
 using ToDoListProject.Dtos.UserDtos;
 using ToDoListProject.Interfaces;
@@ -20,7 +21,7 @@ namespace ToDoListProject.Controllers
         private readonly IConfiguration _configuration;
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
-        private readonly IAuthService _authService;
+        private readonly ILoginManagerService _loginManager;
         private readonly ILogger<AuthController> _logger;
 
         [HttpGet("test-user-manager")]
@@ -32,12 +33,17 @@ namespace ToDoListProject.Controllers
             return Ok("UserManager funciona correctamente");
         }
 
-        public AuthController(IConfiguration configuration, UserManager<User> userManager, SignInManager<User> signInManager, IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IConfiguration configuration,
+            UserManager<User> userManager,
+            SignInManager<User> signInManager,
+            ILoginManagerService loginManager,
+            ILogger<AuthController> logger)
         {
             _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
-            _authService = authService;
+            _loginManager = loginManager;
             _logger = logger;
         }
 
@@ -54,29 +60,18 @@ namespace ToDoListProject.Controllers
         [HttpGet("signin-google")]
         public async Task<IActionResult> LoginCallback()
         {
-           var results = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+            var results = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
 
             if (!results.Succeeded)
-                return BadRequest("Error al autenticar con el proveedor externo");
+                return BadRequest("Error al autenticar con el proveedor externo :((");
 
-            var validation = await _authService.validateUserFromOauth(results.Principal);
+            var principals = results.Principal;          
 
-            //var validation = await _authService.validateUserFromOauth(User);
+            var succeed = await _loginManager.LoginOauthAsync(principals, HttpContext);
 
-            if (validation == true)
-           {
-                var tokenDto = await _authService.GenerateToken(populateExp: true);
+            //return succeed ? Ok() : BadRequest("Error al autenticar con el proveedor externo");
 
-                _authService.SetTokensInsideCookie(tokenDto, HttpContext);
-
-                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-                return Redirect("/swagger");
-           }
-
-            return BadRequest("Error al autenticar con el proveedor externo");
-
-
+            return Redirect("/swagger");
         }
 
         [HttpPost("register")]
@@ -84,14 +79,9 @@ namespace ToDoListProject.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _authService.RegisterUser(dto);
+                var user = await _loginManager.RegisterUserAsync(dto, HttpContext);
                                
-                if (user == null)
-                {
-                    return BadRequest("Fallo al registrarse.");
-                }               
-
-                return Created("", "Usuario Registrado");
+                return user == null ? BadRequest("El usuario ya existe") : Ok();
             }
 
             return BadRequest(ModelState);
@@ -103,20 +93,9 @@ namespace ToDoListProject.Controllers
          {
             if (ModelState.IsValid)
             {
-                var result = await _authService.ValidateUser(dto);
+                var result = await _loginManager.LoginManualAsync(dto, HttpContext);
 
-                if (result)
-                {
-                    var tokenDto = await _authService.GenerateToken(populateExp: true);
-
-                    _authService.SetTokensInsideCookie(tokenDto, HttpContext);
-
-                    return Ok();
-                }
-
-                return Unauthorized("Email o Contraseña Incorrectos.");
-
-
+                return result ? Ok() : Unauthorized();
             }
              return BadRequest(ModelState);
          }
